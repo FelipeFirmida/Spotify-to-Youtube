@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Playlists
+{% endblock %}
+
+{% block main %}
+    <p id="hello">Hello, <span class="youtubered">{{ username }}</span>.</p>
+    <h1 class="h1play">Choose the playlist you want to convert:</h1>
+    <form action="/convertPlaylist" method="post">
+        <select id="drop" name="playlistid">
+            {% for playlist in playlists %}
+                <option value="{{ playlist.id }}">{{ playlist.name }}</option>
+            {% endfor %}
+        </select><br>
+        <button type="submit" value="Convert Playlist">Convert Playlist</button>
+    </form>
+{% endblock %}
