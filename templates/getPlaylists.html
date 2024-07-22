@@ -7,6 +7,7 @@
 {% block main %}
     <p id="hello">Hello, <span class="youtubered">{{ username }}</span>.</p>
     <h1 class="h1play">Choose the playlist you want to convert:</h1>
+    <p>The list of tracks per playlist is limited to 50 for now, because of the quota YouTube puts in web apps to search, create and add videos.</p>
     <form action="/convertPlaylist" method="post">
         <select id="drop" name="playlistid">
             {% for playlist in playlists %}

@@ -208,16 +208,39 @@ def get_token(session):
 @app.route('/convertPlaylist', methods=['GET', 'POST'])
 def convertPlaylist():
     
-    # Check credentials (Spotify and Youtube)
+    def get_token(session):
+            token_valid = False
+            token_info = session.get("token_info", None)
+
+            if not (session.get('token_info', False)):
+                token_valid = False
+                return token_info, token_valid
+        
+            now = int(time.time())
+            is_token_expired = session.get('token_info').get('expires_at') - now < 60
+
+            if (is_token_expired):
+                sp_oauth = create_spotify_oauth()
+                token_info = sp_oauth.refresh_access_token(session.get('token_info').get('refresh_token'))
+        
+            token_valid = True
+            return token_info, token_valid
+
+    # Check credentials (Spotify)
     try: 
-        token_info = get_token()
+        session['token_info'], authorized = get_token(session)
+        session.modified = True
+        if not authorized:
+            print("User not authorized!")
+            return redirect('/')
+        
     except Exception as e:
         print(f"Exception: {e}")
         return redirect(url_for("login", _external=True))
 
-    sp = spotipy.Spotify(auth = token_info['access_token'])
+    sp = spotipy.Spotify(auth = session.get('token_info').get('access_token'))
     
-    # Check for credentials
+    # Check for credentials (Youtube)
     json_credentials = session.get('credentials')
     
     if 'credentials' in session:
@@ -231,6 +254,7 @@ def convertPlaylist():
     else:
         return redirect(url_for('redirectYT'))
 
+    # Create
     youtube = build("youtube", "v3", credentials=credentials)
             
     try:
@@ -260,12 +284,13 @@ def convertPlaylist():
         # Put all tracks in the Spotify playlist in a dictionaire
         allTracks = []
         i = 0
-        # A loop is needed here because the playlist_tracks method only has a limit of 100 tracks.
+        # A loop is needed here because the playlist_tracks method only has a limit of 100 tracks. 
+        # # I will limit this to 50 because of YouTube API terrible quota system (only 10k quota)
         while True:
-            hundredtracks = sp.playlist_tracks(playlistid, limit=100, offset=i * 100)['items']
+            hundredtracks = sp.playlist_tracks(playlistid, limit=50, offset=i * 100)['items']
             i += 1
             allTracks += hundredtracks
-            if(len(hundredtracks) < 100):
+            if(len(hundredtracks) <= 50):
                 break
 
         track_artist_dict = {}
@@ -307,17 +332,145 @@ def convertPlaylist():
         print(e) # Print the error message for debugging
         return render_template('failure.html')
     
+###########################    Here starting the New Tool - Convert URL process ###########################################
+
+### @app.route("/redirectYT2")
+def redirectYT2():
+    # Disable OAuthlib's HTTPS verification when running locally.
+    # *DO NOT* leave this option enabled in production.
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+   # Create OAuth flow object
+    flow = Flow.from_client_secrets_file(
+        'client_secrets.json',
+        scopes=["https://www.googleapis.com/auth/youtube.force-ssl"])
+    flow.redirect_uri = url_for('callback', _external=True)
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        prompt='select_account')
+    
+    # Save the state so we can verify the request later
+    session['state'] = state
+    
+    return redirect(authorization_url)
+
+@app.route('/callback2')
+def callback2():
+    # Verify the request state
+    if request.args.get('state') != session['state']:
+        raise Exception('Invalid state')
+    
+    # Create the OAUth flow object
+    flow = InstalledAppFlow.from_client_secrets_file(
+        'client_secrets.json',
+        scopes=["https://www.googleapis.com/auth/youtube.force-ssl"],
+        state=session['state'])
+    flow.redirect_uri = url_for('callback2', _external=True)
+
+    # Exchange the authorization code for an access token
+    authorization_response = request.url
+    flow.fetch_token(authorization_response=authorization_response)
+
+    # Save credentials to the session
+    credentials = flow.credentials
+    session['credentials'] = credentials.to_json()
+
+    return redirect(url_for('convertPlaylistUrl'))
+
 # Convert playlist from the Spotify URL input located in the index.    
-@app.route('/convertPlaylistUrl', methods=['GET', 'POST'])
-def convertPlaylistUrl():
-    # OAuth Youtube
-
-    # Get Spotify Playlist ID
-    playlisturl = request.form('url')
-    parts = playlisturl.split('/')
-    playlistid = parts[-1]
-
+# @app.route('/convertPlaylistUrl', methods=['GET', 'POST'])
+# def convertPlaylistUrl():
+#     # OAuth Youtube
+#  # Check for credentials (Youtube)
+#     json_credentials = session.get('credentials')
     
-    return "TO DO"
+#     if 'credentials' in session:
+#         dict_credentials = json.loads(json_credentials)
+#         credentials = google.oauth2.credentials.Credentials.from_authorized_user_info(dict_credentials)
+        
 
-    
+#         if credentials.expired:
+#             credentials.refresh(Request())
+
+#     else:
+#         return redirect(url_for('redirectYT'))
+
+#     # Create
+#     youtube = build("youtube", "v3", credentials=credentials)
+            
+#     try:
+
+#          # Get Spotify Playlist ID
+#         playlisturl = request.form('url')
+#         parts = playlisturl.split('/')
+#         playlistid = parts[-1]
+
+#         # Get Spotify playlist name
+#         playlist = sp.playlist(playlist_id = playlistid)
+#         playlistname = playlist['name']
+#         print(playlistname)
+
+#         # Create an empty playlist in Youtube using Spotify playlist name and get it's ID
+#         yt_request_newpl = youtube.playlists().insert(
+#             part="snippet,status",
+#             body={
+#                 "snippet": {
+#                 "title": playlistname,
+#                 "description": "Playlist automatically created with SPOT Labs!",
+#                 },
+#                 "status": {
+#                     "privacyStatus": "public"
+#                 }})
+#         response = yt_request_newpl.execute()
+#         playlist_id = response['id']
+
+
+#         # Put all tracks in the Spotify playlist in a dictionaire
+#         allTracks = []
+#         i = 0
+#         # A loop is needed here because the playlist_tracks method only has a limit of 100 tracks.
+#         while True:
+#             hundredtracks = sp.playlist_tracks(playlistid, limit=100, offset=i * 100)['items']
+#             i += 1
+#             allTracks += hundredtracks
+#             if(len(hundredtracks) < 100):
+#                 break
+
+#         track_artist_dict = {}
+            
+#         for track in allTracks:
+#             track_name = track['track']['name']
+#             artist_name = track['track']['artists'][0]['name']
+#             track_artist_dict[track_name] = artist_name
+            
+#         # Use the dictionaire to search for each track/artist and get its video ID
+#         for track in track_artist_dict:
+#             yt_request_search = youtube.search().list(
+#                 part="snippet",
+#                 maxResults=1,
+#                 order="relevance",
+#                 q = track + " " + track_artist_dict[track]
+#                 )
+#             response = yt_request_search.execute()
+#             video_id = response['items'][0]['id']['videoId']
+                
+#              # Add the video of the track in the playlist using the videoID
+#             yt_request_insert_track = youtube.playlistItems().insert(
+#                     part="snippet",
+#                     body={
+#                         "snippet": {
+#                             "playlistId": playlist_id,
+#                             "resourceId": {
+#                                 "kind": "youtube#video",
+#                                 "videoId": video_id
+#                             }
+#                         }
+#                     }
+#                 )
+#             response = yt_request_insert_track.execute()
+
+#         return render_template('success.html')
+        
+#     except Exception as e:
+#         print(e) # Print the error message for debugging
+#         return render_template('failure.html') ###
