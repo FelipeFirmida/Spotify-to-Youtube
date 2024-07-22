@@ -9,6 +9,7 @@ import google.oauth2.credentials
 import json
 import os
 import os.path
+import time
 
 from flask import Flask, request, url_for, session, redirect, render_template
 from flask_session import Session
@@ -34,9 +35,9 @@ app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+app.config['SESSION_FILE_DIR'] = './.flask_session/'
 Session(app)
 
-TOKEN_INFO = "token_info"
 
 @app.after_request
 def after_request(response):
@@ -47,28 +48,17 @@ def after_request(response):
     return response
 
 
+cache_handler = spotipy.cache_handler.FlaskSessionCacheHandler(session)
+
 def create_spotify_oauth():
     return SpotifyOAuth(
         client_id = os.environ['SPOTIFY_CLIENT_ID'],
         client_secret = os.environ['SPOTIFY_CLIENT_SECRET'],
         redirect_uri = url_for('redirectSite', _external=True),
         scope = "user-read-private playlist-read-private playlist-read-collaborative",
+        cache_handler=cache_handler,
         show_dialog=True
     )
-
-def get_token():
-    token_info = session.get(TOKEN_INFO)
-    if not token_info:
-        raise Exception("Token not found in session")
-    
-    sp_oauth = create_spotify_oauth()
-
-    if sp_oauth.is_token_expired(token_info):
-        sp_oauth = create_spotify_oauth()
-        token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
-        session[TOKEN_INFO] = token_info
-    
-    return token_info
 
 def credentialscheck():
     # Disable OAuthlib's HTTPS verification when running locally.
@@ -89,15 +79,13 @@ def credentialscheck():
         return redirect(url_for('redirectYT'))
 
 # Endpoint Index
-@app.route('/', methods=["GET", "POST"])
+@app.route('/', methods=["GET"])
 def index():
     if request.method == "GET":
         return render_template("index.html")
     
-    else:
-        return "TO DO" # Get playlist link from form and convert to youtube playlist
 
-# Log in user to the web app using OAuth
+# Log in user to the web app using Spotify OAuth
 @app.route("/login")
 def login():
      # Forget any user_id
@@ -116,9 +104,12 @@ def logout():
 @app.route("/redirect")
 def redirectSite():
     sp_oauth = create_spotify_oauth()
+    session.clear()
     code = request.args.get("code")
     token_info = sp_oauth.get_access_token(code)
-    session[TOKEN_INFO] = token_info
+    print(token_info)
+
+    session["token_info"] = token_info
 
     return redirect(url_for("redirectYT", _external=True))
 
@@ -167,17 +158,17 @@ def callback():
 
 @app.route('/getPlaylists')
 def getPlaylists():
-    try: 
-        token_info = get_token()
-    except Exception as e:
-        print(f"Exception: {e}")
-        return redirect(url_for("login", _external=True))
-    
-
-    sp = spotipy.Spotify(auth = token_info['access_token'])
+    session['token_info'], authorized = get_token(session)
+    session.modified = True
+    if not authorized:
+        print("User not authorized!")
+        return redirect('/')
     credentialscheck()
+
+    sp = spotipy.Spotify(auth = session.get('token_info').get('access_token'))
     user = sp.current_user()
     username = user['display_name']
+    print(f"User: {username}") # Debug
     
     # Getting all playlists (since the current_user_playlists max limit is 50, we need a 'for' loop)
     allPlaylists = []
@@ -186,7 +177,7 @@ def getPlaylists():
         fiftyplaylists = sp.current_user_playlists(limit=50, offset=i * 50)['items']
         i += 1
         allPlaylists += fiftyplaylists
-        if(len(fiftyplaylists)< 50):
+        if (len(fiftyplaylists)< 50):
             break
 
     # Filtering the data we actually need in each playlist and sorting them alphabetically)
@@ -194,6 +185,24 @@ def getPlaylists():
     playlists.sort(key=lambda x: x['name'])
 
     return render_template("getPlaylists.html", playlists=playlists, username=username)
+
+def get_token(session):
+    token_valid = False
+    token_info = session.get("token_info", None)
+
+    if not (session.get('token_info', False)):
+        token_valid = False
+        return token_info, token_valid
+    
+    now = int(time.time())
+    is_token_expired = session.get('token_info').get('expires_at') - now < 60
+
+    if (is_token_expired):
+        sp_oauth = create_spotify_oauth()
+        token_info = sp_oauth.refresh_access_token(session.get('token_info').get('refresh_token'))
+    
+    token_valid = True
+    return token_info, token_valid
 
 # Convert the playlist to youtube:
 @app.route('/convertPlaylist', methods=['GET', 'POST'])
@@ -297,5 +306,18 @@ def convertPlaylist():
     except Exception as e:
         print(e) # Print the error message for debugging
         return render_template('failure.html')
+    
+# Convert playlist from the Spotify URL input located in the index.    
+@app.route('/convertPlaylistUrl', methods=['GET', 'POST'])
+def convertPlaylistUrl():
+    # OAuth Youtube
+
+    # Get Spotify Playlist ID
+    playlisturl = request.form('url')
+    parts = playlisturl.split('/')
+    playlistid = parts[-1]
+
+    
+    return "TO DO"
 
     
