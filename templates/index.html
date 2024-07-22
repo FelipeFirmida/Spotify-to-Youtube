@@ -11,8 +11,10 @@
     <a id="abutton" href="/login"><button>Log in to Spotify</button></a>
     <p id="ordivision"> OR...</p>
     <h3>Paste the Spotify playlist link here:</h3>
-    <input type="url" name="url" placeholder="https://open.spotify.com/playlist/..." pattern="https:\/\/open\.spotify\.com\/.*" title="The URL must start with https://open.spotify.com/">
-    <button type="submit">Convert</button>
+    <form action="/convertPlaylistUrl" method="post">
+        <input type="url" name="url" placeholder="https://open.spotify.com/playlist/..." pattern="https:\/\/open\.spotify\.com\/.*" title="The URL must start with https://open.spotify.com/">
+        <button type="submit">Convert</button>
+    </form>
 
 {% endblock %}
 
