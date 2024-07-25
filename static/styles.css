@@ -115,6 +115,28 @@ input[type=url]:focus
     text-decoration: none;
 }
 
+#spicon
+{
+    width: 30px;
+    height: auto;
+    margin-right: 10px;
+}
+
+#splogo
+{
+    width: 100px;
+    height:auto;
+    margin: 10px;
+}
+
+#ytlogo
+{
+    width: 100px;
+    height:auto;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    padding-top: 10px;
+}
 /* getPlaylists styling */
 
 #hello
@@ -136,6 +158,75 @@ input[type=url]:focus
 {
     width: 500px;
 }
+
+/* Loading overlay */
+
+.overlay
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+.loading-window 
+{
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+}
+
+.spinner
+{
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid #000;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin 
+{
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+}
+
+.loading-text {
+    font-size: 18px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.loading-text .dot1, .loading-text .dot2, .loading-text .dot3 {
+    animation: blink 1.5s infinite step-start both;
+}
+
+.loading-text .dot1 {
+    animation-delay: 0s;
+}
+
+.loading-text .dot2 {
+    animation-delay: 0.5s;
+}
+
+.loading-text .dot3 {
+    animation-delay: 1s;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
 
 /* Failure page */
 
