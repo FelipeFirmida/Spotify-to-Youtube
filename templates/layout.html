@@ -13,14 +13,14 @@
         <link href="/static/styles.css" rel="stylesheet">
         <link href="/static/header casstee site.png" rel="icon">
 
-        <title>Spot Labs: {% block title %}{% endblock %}</title>
+        <title>BEAT Labs: {% block title %}{% endblock %}</title>
     </head>
 
     <body>
         <nav class="bg-dark border navbar navbar-expand-md navbar-dark">
             <div class="container-fluid">
-                <img id="logo" src="/static/Design sem nome (4).png" alt="Spot Labs logo: a cassette tape using a headphone">
-                <a class="navbar-brand" id="logotitle" href="/"><span class="green">S</span><span class="green">P</span><span class="green">O</span><span class="green">T</span> <span class="white">Labs</span></a>
+                <img id="logo" src="/static/Design sem nome (4).png" alt="BEAT Labs logo: a cassette tape using a headphone">
+                <a class="navbar-brand" id="logotitle" href="/"><span class="green">B</span><span class="green">E</span><span class="green">A</span><span class="green">T</span> <span class="white">Labs</span></a>
                 <button aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-bs-target="#navbar" data-bs-toggle="collapse" type="button">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -29,7 +29,7 @@
                     <ul class="navbar-nav me-auto mt-2">
                         <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
                         <li class="nav-item"><a class="nav-link" href="/contact">Contact</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/donation">Donation</a></li>
+                        <li class="nav-item"><a class="nav-link" href="https://streamelements.com/lightzor/tip">Donation</a></li>
                     </ul>
                     {% if session["token_info"] %}
                         <ul class="navbar-nav me-auto mt-2">
@@ -53,11 +53,20 @@
 
         <footer class="mb-5">
             <p class="mb-3 small text-center text-muted">
-                Consider making a <a href="####DONATION LINK#####">DONATION</a> to help the developers and maintain this website.
+                Consider making a <a href="https://streamelements.com/lightzor/tip">DONATION</a> to help the developers and maintain this website.
             </p>
-            <p class="mb-3 small text-center text-muted">
-                Data provided by <a href="https://open.spotify.com/">Spotify</a> and <a href="https://www.youtube.com/">YouTube</a>
-            </p>
+
+            <div id="spotifyinfo">
+                <p class="mb-3 small text-center text-muted">
+                    Music data provided by <a href="https://spotify.com/" target="_blank"><img id="splogo" src="/static/Spotify_Logo_RGB_Black.png" alt="Spotify"></a>
+                </p>
+            </div>
+
+            <div id="youtubeinfo">
+                <p class="mb-3 small text-center text-muted">
+                    Video data provided by <a href="https://youtube.com/" target="_blank"><img id="ytlogo" src="/static/yt_logo_rgb_light.png" alt="Youtube"></a>
+                </p>
+            </div>
 
             <form action="https://validator.w3.org/check" class="text-center" enctype="multipart/form-data" method="post" target="_blank">
                 <input name="doctype" type="hidden" value="HTML5">

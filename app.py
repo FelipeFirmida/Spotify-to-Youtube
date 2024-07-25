@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
 import google.oauth2.credentials
+from googleapiclient.errors import HttpError
 
 import json
 import os
@@ -19,6 +20,8 @@ import clientinfo # File containing all the info necessary to login the web APP 
 """ requirements [
     Flask,
     Spotipy,
+    Spotify OAuth,
+    Google/Youtube OAuth,
     OS,
     time,
     clientinfo
@@ -107,7 +110,6 @@ def redirectSite():
     session.clear()
     code = request.args.get("code")
     token_info = sp_oauth.get_access_token(code)
-    print(token_info)
 
     session["token_info"] = token_info
 
@@ -168,7 +170,6 @@ def getPlaylists():
     sp = spotipy.Spotify(auth = session.get('token_info').get('access_token'))
     user = sp.current_user()
     username = user['display_name']
-    print(f"User: {username}") # Debug
     
     # Getting all playlists (since the current_user_playlists max limit is 50, we need a 'for' loop)
     allPlaylists = []
@@ -261,10 +262,8 @@ def convertPlaylist():
 
         # Get Spotify playlist name
         playlistid = request.form['playlistid']
-        print(playlistid)
         playlist = sp.playlist(playlist_id = playlistid)
         playlistname = playlist['name']
-        print(playlistname)
 
         # Create an empty playlist in Youtube using Spotify playlist name and get it's ID
         yt_request_newpl = youtube.playlists().insert(
@@ -272,7 +271,7 @@ def convertPlaylist():
             body={
                 "snippet": {
                 "title": playlistname,
-                "description": "Playlist automatically created with SPOT Labs!",
+                "description": "Playlist automatically created with BEAT Labs!",
                 },
                 "status": {
                     "privacyStatus": "public"
@@ -302,29 +301,47 @@ def convertPlaylist():
             
         # Use the dictionaire to search for each track/artist and get its video ID
         for track in track_artist_dict:
-            yt_request_search = youtube.search().list(
-                part="snippet",
-                maxResults=1,
-                order="relevance",
-                q = track + " " + track_artist_dict[track]
-                )
-            response = yt_request_search.execute()
-            video_id = response['items'][0]['id']['videoId']
-                
-             # Add the video of the track in the playlist using the videoID
-            yt_request_insert_track = youtube.playlistItems().insert(
-                    part="snippet",
-                    body={
-                        "snippet": {
-                            "playlistId": playlist_id,
-                            "resourceId": {
-                                "kind": "youtube#video",
-                                "videoId": video_id
+            max_retries = 5
+            retry_count = 0
+            backoff_time = 1 # In seconds
+
+            while retry_count < max_retries:
+                try:
+                    yt_request_search = youtube.search().list(
+                        part="snippet",
+                        maxResults=1,
+                        order="relevance",
+                        q = track + " " + track_artist_dict[track]
+                        )
+                    response = yt_request_search.execute()
+                    video_id = response['items'][0]['id']['videoId']
+                        
+                    # Add the video of the track in the playlist using the videoID
+                    yt_request_insert_track = youtube.playlistItems().insert(
+                            part="snippet",
+                            body={
+                                "snippet": {
+                                    "playlistId": playlist_id,
+                                    "resourceId": {
+                                        "kind": "youtube#video",
+                                        "videoId": video_id
+                                    }
+                                }
                             }
-                        }
-                    }
-                )
-            response = yt_request_insert_track.execute()
+                        )
+                    response = yt_request_insert_track.execute()
+                    break
+
+                except HttpError as e:
+                    if e.resp.status == 409 and 'SERVICE_UNAVAILABLE' in str(e):
+                        retry_count += 1
+                        print(f"Attempt {retry_count} failed. Retrying in (backoff_time) seconds...")
+                        time.sleep(backoff_time)
+                        backoff_time *= 2 #Exponential backoff
+                    else:
+                        raise
+            else:
+                raise Exception("Failed to add the song to the playlist after multiple retries.")    
 
         return render_template('success.html')
         
@@ -416,7 +433,7 @@ def callback2():
 #             body={
 #                 "snippet": {
 #                 "title": playlistname,
-#                 "description": "Playlist automatically created with SPOT Labs!",
+#                 "description": "Playlist automatically created with BEAT Labs!",
 #                 },
 #                 "status": {
 #                     "privacyStatus": "public"

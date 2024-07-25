@@ -14,6 +14,15 @@
                 <option value="{{ playlist.id }}">{{ playlist.name }}</option>
             {% endfor %}
         </select><br>
-        <button type="submit" value="Convert Playlist">Convert Playlist</button>
+        <button type="submit" value="Convert Playlist" onclick="showLoading()">Convert Playlist</button>
     </form>
+    
+    <!--Loading Screen-->
+    <div id="overlay" class="overlay">
+        <div class="loading-window">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading<span class="dot1">.</span><span class="dot2">.</span><span class="dot3">.</span></div>
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
 {% endblock %}
