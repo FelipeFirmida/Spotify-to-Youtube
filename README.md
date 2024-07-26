@@ -61,6 +61,7 @@ npm start
 
 6. Or you can also create a clientinfo.py file and import the os.environ library and include the information below:
 
+```python
 import os
 os.environ['SPOTIFY_CLIENT_ID'] = your_spotify_client_id
 os.environ['SPOTIFY_CLIENT_SECRET'] = your_spotify_client_secret
@@ -68,6 +69,7 @@ os.environ['FLASK_S_KEY'] = your_flask_secret_key
 os.environ['YT_API_KEY'] = your_youtube_api_key
 os.environ['YT_CLIENT_ID'] = your_youtube_client_id
 os.environ['YT_CLIENT_SKEY'] = your_youtube_client_secret_key
+```
 
 7. After creating the file you should add the line in the app.py file:
 ```python
