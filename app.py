@@ -98,6 +98,7 @@ def login():
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
+# Logout user
 @app.route("/logout")
 def logout():
     session.clear()
@@ -115,6 +116,7 @@ def redirectSite():
 
     return redirect(url_for("redirectYT", _external=True))
 
+# Redirect Page to the YouTube OAuth
 @app.route("/redirectYT")
 def redirectYT():
     # Disable OAuthlib's HTTPS verification when running locally.
@@ -135,6 +137,7 @@ def redirectYT():
     
     return redirect(authorization_url)
 
+# Callback page to check Google OAuth
 @app.route('/callback')
 def callback():
     # Verify the request state
@@ -158,6 +161,7 @@ def callback():
 
     return redirect(url_for('getPlaylists'))
 
+# Web page where the Spotify Playlists are listed
 @app.route('/getPlaylists')
 def getPlaylists():
     session['token_info'], authorized = get_token(session)
@@ -255,7 +259,7 @@ def convertPlaylist():
     else:
         return redirect(url_for('redirectYT'))
 
-    # Create
+    # Create youtube variable to use youtube related methods
     youtube = build("youtube", "v3", credentials=credentials)
             
     try:
@@ -349,7 +353,7 @@ def convertPlaylist():
         print(e) # Print the error message for debugging
         return render_template('failure.html')
     
-###########################    Here starting the New Tool - Convert URL process ###########################################
+###########################    (CODE NOT YET IMPLEMENTED) Here starting the New Tool - Convert URL process ###########################################
 
 ### @app.route("/redirectYT2")
 def redirectYT2():
