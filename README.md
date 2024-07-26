@@ -21,7 +21,8 @@ The Spotify to YouTube Playlist Converter is a web application that allows users
 - User-friendly interface
 - Error handling for invalid URLs
 
-#### Installation (while in development mode):
+#### Installation:
+(while in development mode)
 1. Clone the repository:
 ```bash
 git clone https://github.com/FelipeFirmida/Spotify-to-Youtube.git
