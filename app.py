@@ -17,32 +17,24 @@ from flask_session import Session
 
 import clientinfo # File containing all the info necessary to login the web APP to the Spotify and youtube APIs
 
-""" requirements [
-    Flask,
-    Spotipy,
-    Spotify OAuth,
-    Google/Youtube OAuth,
-    OS,
-    time,
-    clientinfo
-]"""
+""" requirements: see requirements.txt file """
 
-app = Flask(__name__)
+application = Flask(__name__)
 if __name__ == "__main__":
-    app.run(debug=True)
+    application.run(debug=True)
 
-app.secret_key = os.environ['FLASK_S_KEY']
+application.secret_key = os.environ['FLASK_S_KEY']
 
-app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
+application.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
 
 # Configure session to use filesystem (instead of signed cookies)
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
-app.config['SESSION_FILE_DIR'] = './.flask_session/'
-Session(app)
+application.config["SESSION_PERMANENT"] = False
+application.config["SESSION_TYPE"] = "filesystem"
+application.config['SESSION_FILE_DIR'] = './.flask_session/'
+Session(application)
 
 
-@app.after_request
+@application.after_request
 def after_request(response):
     """Ensure responses aren't cached"""
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -82,14 +74,14 @@ def credentialscheck():
         return redirect(url_for('redirectYT'))
 
 # Endpoint Index
-@app.route('/', methods=["GET"])
+@application.route('/', methods=["GET"])
 def index():
     if request.method == "GET":
         return render_template("index.html")
     
 
 # Log in user to the web app using Spotify OAuth
-@app.route("/login")
+@application.route("/login")
 def login():
      # Forget any user_id
     session.clear()
@@ -99,13 +91,13 @@ def login():
     return redirect(auth_url)
 
 # Logout user
-@app.route("/logout")
+@application.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("index", _external=True))
 
 # After login, redirect user to the page with the correct authorization token
-@app.route("/redirect")
+@application.route("/redirect")
 def redirectSite():
     sp_oauth = create_spotify_oauth()
     session.clear()
@@ -117,7 +109,7 @@ def redirectSite():
     return redirect(url_for("redirectYT", _external=True))
 
 # Redirect Page to the YouTube OAuth
-@app.route("/redirectYT")
+@application.route("/redirectYT")
 def redirectYT():
     # Disable OAuthlib's HTTPS verification when running locally.
     # *DO NOT* leave this option enabled in production.
@@ -138,7 +130,7 @@ def redirectYT():
     return redirect(authorization_url)
 
 # Callback page to check Google OAuth
-@app.route('/callback')
+@application.route('/callback')
 def callback():
     # Verify the request state
     if request.args.get('state') != session['state']:
@@ -162,7 +154,7 @@ def callback():
     return redirect(url_for('getPlaylists'))
 
 # Web page where the Spotify Playlists are listed
-@app.route('/getPlaylists')
+@application.route('/getPlaylists')
 def getPlaylists():
     session['token_info'], authorized = get_token(session)
     session.modified = True
@@ -210,7 +202,7 @@ def get_token(session):
     return token_info, token_valid
 
 # Convert the playlist to youtube:
-@app.route('/convertPlaylist', methods=['GET', 'POST'])
+@application.route('/convertPlaylist', methods=['GET', 'POST'])
 def convertPlaylist():
     
     def get_token(session):
@@ -375,7 +367,7 @@ def redirectYT2():
     
     return redirect(authorization_url)
 
-@app.route('/callback2')
+@application.route('/callback2')
 def callback2():
     # Verify the request state
     if request.args.get('state') != session['state']:
