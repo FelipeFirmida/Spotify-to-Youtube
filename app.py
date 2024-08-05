@@ -113,9 +113,9 @@ def redirectSite():
 def redirectYT():
     # Disable OAuthlib's HTTPS verification when running locally.
     # *DO NOT* leave this option enabled in production.
-    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+    # os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" # Disabled this code because Production is Running!!!
 
-   # Create OAuth flow object
+    # Create OAuth flow object
     flow = Flow.from_client_secrets_file(
         'client_secrets.json',
         scopes=["https://www.googleapis.com/auth/youtube.force-ssl"])
@@ -353,7 +353,7 @@ def redirectYT2():
     # *DO NOT* leave this option enabled in production.
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-   # Create OAuth flow object
+    # Create OAuth flow object
     flow = Flow.from_client_secrets_file(
         'client_secrets.json',
         scopes=["https://www.googleapis.com/auth/youtube.force-ssl"])
